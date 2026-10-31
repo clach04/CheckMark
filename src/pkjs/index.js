@@ -81,6 +81,34 @@ function main() {
     }
 }
 
+// With newer versions of the Pebble app and/or Nextcloud, the requests were refused.
+// Apparently the Basic Authorization header was missing, so add it manually here.
+//
+// [18:42:16] pkjs> CheckMark:232:14) PROPFIND status: 401
+// [18:42:16] pkjs> CheckMark:276:16) PROPFIND failed with status: 401 <?xml version="1.0" encoding="utf-8"?>
+// <d:error xmlns:d="DAV:" xmlns:s="http://sabredav.org/ns">
+//   <s:exception>Sabre\DAV\Exception\NotAuthenticated</s:exception>
+//   <s:message>No public access to this resource., This request is not for a federated calendar, No 'Authorization: Basic' header found. Either the client didn't send one, or the server is misconfigured, No 'Authorization: Bearer' header found. Either the client didn't send one, or the server is mis-configured, No 'Authorization: Basic' header found. Either the client didn't send one, or the server is misconfigured</s:message>
+// </d:error>
+function openWebDavRequest(request, method, url) {
+  // Encode the credentials as UTF-8 bytes before converting them to Base64.
+  let bytes = encodeURIComponent(username + ':' + appPassword).replace(/%([0-9A-F]{2})/g, function (_, hex) {
+    return String.fromCharCode(parseInt(hex, 16));
+  });
+  let alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let encoded = '';
+  for (let i = 0; i < bytes.length; i += 3) {
+    let a = bytes.charCodeAt(i);
+    let b = i + 1 < bytes.length ? bytes.charCodeAt(i + 1) : 0;
+    let c = i + 2 < bytes.length ? bytes.charCodeAt(i + 2) : 0;
+    encoded += alphabet[a >> 2] + alphabet[((a & 3) << 4) | (b >> 4)];
+    encoded += i + 1 < bytes.length ? alphabet[((b & 15) << 2) | (c >> 6)] : '=';
+    encoded += i + 2 < bytes.length ? alphabet[c & 63] : '=';
+  }
+  request.open(method, url, true);
+  request.setRequestHeader('Authorization', 'Basic ' + encoded);
+}
+
 function loadDocument() {
   // Create a new web request
   let request = new XMLHttpRequest();
@@ -119,7 +147,7 @@ function loadDocument() {
     sendItemsToWatch();
   };
 
-  request.open('GET', webdavUrl, true, username, appPassword);
+  openWebDavRequest(request, 'GET', webdavUrl);
   request.send();
   console.log('Sent request');
   setStatus('', true);
@@ -187,7 +215,7 @@ function listFolder() {
     setStatus('Network error!');
   };
 
-  request.open('PROPFIND', webdavUrl, true, username, appPassword);
+  openWebDavRequest(request, 'PROPFIND', webdavUrl);
   request.setRequestHeader('Depth', 'infinity');
   request.setRequestHeader('Content-Type', 'application/xml; charset=utf-8');
   request.send('<?xml version="1.0" encoding="utf-8"?><propfind xmlns="DAV:"><prop><resourcetype/><getcontenttype/><getlastmodified/></prop></propfind>');
@@ -320,7 +348,7 @@ function uploadFile(url, content) {
   request.onerror = function () {
     setStatus('Upload error!');
   };
-  request.open('PUT', url, true, username, appPassword);
+  openWebDavRequest(request, 'PUT', url);
   request.setRequestHeader('Content-Type', 'text/markdown');
   request.send(content);
   setStatus('', true);
@@ -368,7 +396,7 @@ function loadSelectedFiles() {
       }
     };
     request.onerror = function () { setStatus('Network error!'); };
-    request.open('GET', url, true, username, appPassword);
+    openWebDavRequest(request, 'GET', url);
     request.send();
   }
 
