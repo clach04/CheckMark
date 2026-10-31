@@ -83,6 +83,8 @@ function main() {
 
 // With newer versions of the Pebble app and/or Nextcloud, the requests were refused.
 // Apparently the Basic Authorization header was missing, so add it manually here.
+// This used to work by just passing the credentials to XMLHttpRequest.open(), but an
+// update to the Pebble JS Runtime likely broke it.
 //
 // [18:42:16] pkjs> CheckMark:232:14) PROPFIND status: 401
 // [18:42:16] pkjs> CheckMark:276:16) PROPFIND failed with status: 401 <?xml version="1.0" encoding="utf-8"?>
