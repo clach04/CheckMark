@@ -48,11 +48,12 @@ Pebble.addEventListener('webviewclosed', function (e) {
     return;
   }
 
-  console.log(`RESPONSE: ${e.response}`);
-
   // Get the keys and values from each config item
   var settings = clay.getSettings(e.response, false);
-  console.log(`DICT: ${JSON.stringify(settings)}`);
+  var loggedSettings = Object.assign({}, settings, {
+    CONFIG_APP_PASSWORD: Object.assign({}, settings.CONFIG_APP_PASSWORD, { value: '***' })
+  });
+  console.log(`DICT: ${JSON.stringify(loggedSettings)}`);
   settings.CONFIG_WEB_DAV_URL.value = settings.CONFIG_WEB_DAV_URL.value.trim();
 
   let storeSetting = (key) => {
