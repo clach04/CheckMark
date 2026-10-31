@@ -1,7 +1,3 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## What this app does
 
 CheckMark is a Pebble smartwatch app that fetches a Markdown file from a Nextcloud server via WebDAV and displays its checklist items. Only lines matching `- [ ] <text>` are shown. Checking an item on the watch toggles the line to `- [x]` and uploads the updated file back to the server via PUT. Authentication uses HTTP Basic Auth with a Nextcloud app password.
